@@ -1,14 +1,17 @@
+
 """
 DAY 1 · HANDS-ON — Build Your Rule Engine
 23IF02 System Automation
 
-Work through the TODOs in order. Each one matches a step on the
-"Hands-on · Build Your Rule Engine" slide. Run this file after each
-step to see your progress:
-
-    python hands_on_starter.py
-
-Need the answer? See hands_on_solution.py — but try it yourself first.
+Steps:
+1. Generate simulated sensor data
+2. Define automation rules
+3. Evaluate rules by priority
+4. Trigger actions
+5. Log every decision
+6. Add a second sensor (current)
+7. Add a custom rule
+8. Add a priority rule
 """
 
 import random
@@ -18,71 +21,127 @@ LOG_FILE = "day1_log.txt"
 
 
 # ---------------------------------------------------------------------------
-# STEP 1 — Generate simulated sensor data
+# STEP 1 & 6 — Generate simulated sensor data
 # ---------------------------------------------------------------------------
 def generate_sensor_data():
-    """Return a dict with at least 'temperature', 'pressure', 'vibration'."""
-    # TODO: fill in realistic random values, e.g. temperature 50-95 (deg C)
+    """Return simulated sensor readings."""
     return {
-        "temperature": None,   # TODO
-        "pressure": None,      # TODO
-        "vibration": None,     # TODO
+        "temperature": round(random.uniform(50, 95), 2),  # Degree Celsius
+        "pressure": round(random.uniform(2, 10), 2),      # Bar
+        "vibration": round(random.uniform(0, 12), 2),     # mm/s
+        "current": round(random.uniform(5, 30), 2),      # Amperes
     }
-    # STRETCH GOAL (after the 8 steps below all work): real sensors aren't
-    # perfectly clean. Try making one field randomly return None (a
-    # dropout) or spike far outside its normal range every so often, then
-    # update evaluate_rules() so a dropout doesn't crash your engine.
 
 
 # ---------------------------------------------------------------------------
-# STEP 2 — Write your first automation rules
-# STEP 7 — Add a rule of your own (add another dict to this list)
-# STEP 8 — Add one priority rule (lower "priority" number checked first)
+# STEP 2, 7 & 8 — Define automation rules
+# Lower priority number = checked first
 # ---------------------------------------------------------------------------
 RULES = [
-    # TODO: add rule dicts like:
-    # {"name": "HIGH_TEMP", "priority": 1, "condition": lambda r: r["temperature"] > 80, "action": "STOP_MACHINE"},
+    {
+        "name": "EMERGENCY_TEMPERATURE",
+        "priority": 1,
+        "condition": lambda r: r["temperature"] > 90,
+        "action": "EMERGENCY_SHUTDOWN",
+    },
+    {
+        "name": "HIGH_VIBRATION",
+        "priority": 2,
+        "condition": lambda r: r["vibration"] > 10,
+        "action": "STOP_MACHINE",
+    },
+    {
+        "name": "HIGH_PRESSURE",
+        "priority": 3,
+        "condition": lambda r: r["pressure"] > 8,
+        "action": "REDUCE_PRESSURE",
+    },
+    {
+        "name": "HIGH_CURRENT",
+        "priority": 4,
+        "condition": lambda r: r["current"] > 25,
+        "action": "CHECK_MOTOR",
+    },
+    {
+        "name": "HIGH_TEMPERATURE",
+        "priority": 5,
+        "condition": lambda r: r["temperature"] > 80,
+        "action": "COOL_MACHINE",
+    },
+    # STEP 7: Custom rule
+    {
+        "name": "LOW_PRESSURE",
+        "priority": 6,
+        "condition": lambda r: r["pressure"] < 3,
+        "action": "CHECK_PRESSURE_SYSTEM",
+    },
 ]
 
 
 # ---------------------------------------------------------------------------
-# STEP 3 — Detect machine state from the rules
+# STEP 3 — Evaluate rules in priority order
 # ---------------------------------------------------------------------------
 def evaluate_rules(reading, rules):
-    """Return (rule_name, action) for the first matching rule, checked in
-    priority order (lowest number first). If nothing matches, return
-    ("NO_RULE_FIRED", "CONTINUE_NORMAL")."""
-    # TODO: sort `rules` by priority, then check each rule's condition(reading)
+    """
+    Return (rule_name, action) for the first matching rule.
+    Lowest priority number is checked first.
+    """
+    sorted_rules = sorted(rules, key=lambda rule: rule["priority"])
+
+    for rule in sorted_rules:
+        try:
+            if rule["condition"](reading):
+                return rule["name"], rule["action"]
+        except (KeyError, TypeError):
+            # Ignore rules whose required sensor data is missing or invalid.
+            continue
+
     return "NO_RULE_FIRED", "CONTINUE_NORMAL"
 
 
 # ---------------------------------------------------------------------------
-# STEP 4 — Trigger an action when a rule fires
+# STEP 4 — Trigger an action
 # ---------------------------------------------------------------------------
 def take_action(action):
-    """Return a human-readable string describing what happens for this action."""
-    # TODO: map action names (e.g. "STOP_MACHINE") to a message
-    return f"(no handler yet for action: {action})"
+    """Return a human-readable response for an action."""
+    actions = {
+        "EMERGENCY_SHUTDOWN": "EMERGENCY! Shut down the machine immediately.",
+        "STOP_MACHINE": "Stop the machine for safety inspection.",
+        "REDUCE_PRESSURE": "Activate pressure reduction procedure.",
+        "CHECK_MOTOR": "Inspect motor current and electrical load.",
+        "COOL_MACHINE": "Activate the cooling system.",
+        "CHECK_PRESSURE_SYSTEM": "Inspect the pressure system for leaks.",
+        "CONTINUE_NORMAL": "All conditions normal. Continue operation.",
+    }
+
+    return actions.get(action, f"No handler available for action: {action}")
 
 
 # ---------------------------------------------------------------------------
-# STEP 5 — Log every decision made
+# STEP 5 — Log every decision
 # ---------------------------------------------------------------------------
 def log_decision(reading, rule_name, action):
-    """Append one line to LOG_FILE with the reading, rule fired, and action."""
-    # TODO: open(LOG_FILE, "a") and write a line
-    pass
+    """Append each sensor reading and decision to the log file."""
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+
+    with open(LOG_FILE, "a", encoding="utf-8") as file:
+        file.write(
+            f"{timestamp} | "
+            f"Reading: {reading} | "
+            f"Rule: {rule_name} | "
+            f"Action: {action}\n"
+        )
 
 
 # ---------------------------------------------------------------------------
-# STEP 6 — Add a second sensor to the system
-# TODO: add e.g. "current" to generate_sensor_data(), then use it in a rule
+# MAIN — Run the automation engine
 # ---------------------------------------------------------------------------
-
-
 def main():
+    print("=== SYSTEM AUTOMATION: RULE ENGINE ===\n")
+
     for tick in range(1, 11):
         reading = generate_sensor_data()
+
         rule_name, action = evaluate_rules(reading, RULES)
         outcome = take_action(action)
 
@@ -91,7 +150,10 @@ def main():
         print(f"           ACT   -> {outcome}\n")
 
         log_decision(reading, rule_name, action)
+
         time.sleep(0.2)
+
+    print(f"Execution completed. Decisions saved in '{LOG_FILE}'.")
 
 
 if __name__ == "__main__":
