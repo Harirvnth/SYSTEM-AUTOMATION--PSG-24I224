@@ -98,7 +98,10 @@ def evaluate_rules(reading, rules):
 
     return "NO_RULE_FIRED", "CONTINUE_NORMAL"
 
-
+def check_sensor_status(temperature):
+    if temperature > 80:
+        return "WARNING: High temperature"
+    return "Temperature normal"
 # ---------------------------------------------------------------------------
 # STEP 4 — Trigger an action
 # ---------------------------------------------------------------------------
