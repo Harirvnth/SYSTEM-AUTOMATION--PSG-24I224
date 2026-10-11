@@ -1,162 +1,165 @@
 
 """
-DAY 1 · HANDS-ON — Build Your Rule Engine
-23IF02 System Automation
-
-Steps:
-1. Generate simulated sensor data
-2. Define automation rules
-3. Evaluate rules by priority
-4. Trigger actions
-5. Log every decision
-6. Add a second sensor (current)
-7. Add a custom rule
-8. Add a priority rule
+DAY 1: System Automation Rule Engine
+Generates 500 sensor samples for Day 2 ML training.
 """
 
+import csv
 import random
 import time
+from pathlib import Path
 
-LOG_FILE = "day1_log.txt"
+# Shared project paths
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+CSV_FILE = PROJECT_DIR / "sensor_data.csv"
+LOG_FILE = Path(__file__).resolve().parent / "day1_log.txt"
 
+NUM_SAMPLES = 500
 
-# ---------------------------------------------------------------------------
-# STEP 1 & 6 — Generate simulated sensor data
-# ---------------------------------------------------------------------------
-def generate_sensor_data():
-    """Return simulated sensor readings."""
-    return {
-        "temperature": round(random.uniform(50, 95), 2),  # Degree Celsius
-        "pressure": round(random.uniform(2, 10), 2),      # Bar
-        "vibration": round(random.uniform(0, 12), 2),     # mm/s
-        "current": round(random.uniform(5, 30), 2),      # Amperes
-    }
-
-
-# ---------------------------------------------------------------------------
-# STEP 2, 7 & 8 — Define automation rules
-# Lower priority number = checked first
-# ---------------------------------------------------------------------------
+# Priority: lower number means checked first.
 RULES = [
     {
         "name": "EMERGENCY_TEMPERATURE",
         "priority": 1,
         "condition": lambda r: r["temperature"] > 90,
         "action": "EMERGENCY_SHUTDOWN",
+        "state": "OVERHEATING",
     },
     {
         "name": "HIGH_VIBRATION",
         "priority": 2,
         "condition": lambda r: r["vibration"] > 10,
         "action": "STOP_MACHINE",
+        "state": "HIGH_VIBRATION",
     },
     {
         "name": "HIGH_PRESSURE",
         "priority": 3,
         "condition": lambda r: r["pressure"] > 8,
         "action": "REDUCE_PRESSURE",
+        "state": "HIGH_PRESSURE",
     },
     {
         "name": "HIGH_CURRENT",
         "priority": 4,
         "condition": lambda r: r["current"] > 25,
         "action": "CHECK_MOTOR",
+        "state": "MOTOR_OVERLOAD",
     },
     {
         "name": "HIGH_TEMPERATURE",
         "priority": 5,
         "condition": lambda r: r["temperature"] > 80,
         "action": "COOL_MACHINE",
+        "state": "OVERHEATING",
     },
-    # STEP 7: Custom rule
     {
         "name": "LOW_PRESSURE",
         "priority": 6,
         "condition": lambda r: r["pressure"] < 3,
         "action": "CHECK_PRESSURE_SYSTEM",
+        "state": "LOW_PRESSURE",
     },
 ]
 
 
-# ---------------------------------------------------------------------------
-# STEP 3 — Evaluate rules in priority order
-# ---------------------------------------------------------------------------
-def evaluate_rules(reading, rules):
-    """
-    Return (rule_name, action) for the first matching rule.
-    Lowest priority number is checked first.
-    """
-    sorted_rules = sorted(rules, key=lambda rule: rule["priority"])
-
-    for rule in sorted_rules:
-        try:
-            if rule["condition"](reading):
-                return rule["name"], rule["action"]
-        except (KeyError, TypeError):
-            # Ignore rules whose required sensor data is missing or invalid.
-            continue
-
-    return "NO_RULE_FIRED", "CONTINUE_NORMAL"
-
-def check_sensor_status(temperature):
-    if temperature > 80:
-        return "WARNING: High temperature"
-    return "Temperature normal"
-# ---------------------------------------------------------------------------
-# STEP 4 — Trigger an action
-# ---------------------------------------------------------------------------
-def take_action(action):
-    """Return a human-readable response for an action."""
-    actions = {
-        "EMERGENCY_SHUTDOWN": "EMERGENCY! Shut down the machine immediately.",
-        "STOP_MACHINE": "Stop the machine for safety inspection.",
-        "REDUCE_PRESSURE": "Activate pressure reduction procedure.",
-        "CHECK_MOTOR": "Inspect motor current and electrical load.",
-        "COOL_MACHINE": "Activate the cooling system.",
-        "CHECK_PRESSURE_SYSTEM": "Inspect the pressure system for leaks.",
-        "CONTINUE_NORMAL": "All conditions normal. Continue operation.",
+def generate_sensor_data():
+    """Generate one simulated sensor reading."""
+    return {
+        "temperature": round(random.uniform(50, 95), 2),
+        "pressure": round(random.uniform(2, 10), 2),
+        "vibration": round(random.uniform(0, 12), 2),
+        "current": round(random.uniform(5, 30), 2),
+        "rpm": random.randint(1400, 2200),
     }
 
-    return actions.get(action, f"No handler available for action: {action}")
+
+def evaluate_rules(reading):
+    """Return the first matching rule in priority order."""
+    for rule in sorted(RULES, key=lambda r: r["priority"]):
+        if rule["condition"](reading):
+            return rule["name"], rule["action"], rule["state"]
+
+    return "NO_RULE_FIRED", "CONTINUE_NORMAL", "NORMAL"
 
 
-# ---------------------------------------------------------------------------
-# STEP 5 — Log every decision
-# ---------------------------------------------------------------------------
-def log_decision(reading, rule_name, action):
-    """Append each sensor reading and decision to the log file."""
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+def take_action(action):
+    """Describe the simulated automation action."""
+    actions = {
+        "EMERGENCY_SHUTDOWN":
+            "Simulated emergency shutdown",
+        "STOP_MACHINE":
+            "Simulated machine stop for inspection",
+        "REDUCE_PRESSURE":
+            "Simulated pressure reduction",
+        "CHECK_MOTOR":
+            "Inspect motor load",
+        "COOL_MACHINE":
+            "Activate simulated cooling",
+        "CHECK_PRESSURE_SYSTEM":
+            "Inspect pressure system",
+        "CONTINUE_NORMAL":
+            "Continue normal operation",
+    }
+    return actions.get(action, "Unknown action")
 
-    with open(LOG_FILE, "a", encoding="utf-8") as file:
-        file.write(
-            f"{timestamp} | "
-            f"Reading: {reading} | "
-            f"Rule: {rule_name} | "
-            f"Action: {action}\n"
-        )
 
-
-# ---------------------------------------------------------------------------
-# MAIN — Run the automation engine
-# ---------------------------------------------------------------------------
 def main():
-    print("=== SYSTEM AUTOMATION: RULE ENGINE ===\n")
+    print("=== DAY 1: SENSOR DATA GENERATION ===")
 
-    for tick in range(1, 11):
-        reading = generate_sensor_data()
+    # Use a fixed seed for reproducible data.
+    random.seed(42)
 
-        rule_name, action = evaluate_rules(reading, RULES)
-        outcome = take_action(action)
+    fieldnames = [
+        "temperature",
+        "pressure",
+        "vibration",
+        "current",
+        "rpm",
+        "state",
+    ]
 
-        print(f"[Tick {tick:02d}] SENSE -> {reading}")
-        print(f"           THINK -> {rule_name}")
-        print(f"           ACT   -> {outcome}\n")
+    state_counts = {}
 
-        log_decision(reading, rule_name, action)
+    with (
+        open(CSV_FILE, "w", newline="", encoding="utf-8") as csv_file,
+        open(LOG_FILE, "w", encoding="utf-8") as log_file,
+    ):
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
 
-        time.sleep(0.2)
+        for tick in range(1, NUM_SAMPLES + 1):
+            reading = generate_sensor_data()
 
-    print(f"Execution completed. Decisions saved in '{LOG_FILE}'.")
+            rule_name, action, state = evaluate_rules(reading)
+            outcome = take_action(action)
+
+            # Save features and the rule-derived target label.
+            writer.writerow({**reading, "state": state})
+
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            log_file.write(
+                f"{timestamp} | Sample: {tick} | "
+                f"Reading: {reading} | State: {state} | "
+                f"Rule: {rule_name} | Action: {action}\n"
+            )
+
+            state_counts[state] = state_counts.get(state, 0) + 1
+
+            if tick <= 10 or tick % 100 == 0:
+                print(
+                    f"[{tick:03d}/{NUM_SAMPLES}] "
+                    f"State={state} | Rule={rule_name} | {outcome}"
+                )
+
+    print("\n=== DAY 1 COMPLETED ===")
+    print(f"Dataset saved: {CSV_FILE}")
+    print(f"Log saved: {LOG_FILE}")
+    print(f"Total samples: {NUM_SAMPLES}")
+    print("\nGenerated class distribution:")
+
+    for state, count in sorted(state_counts.items()):
+        print(f"{state}: {count}")
 
 
 if __name__ == "__main__":
