@@ -1,0 +1,14 @@
+# Technician maintenance log -- one line per note.
+# Format: YYYY-MM-DD HH:MM | ARM-ID (or "-" for general) | free text
+2024-05-01 08:12 | ARM-01 | Routine inspection, everything nominal. No abnormal noise.
+2024-05-01 09:40 | ARM-02 | Slight grease residue near the elbow joint, wiped it clean.
+2024-05-02 10:05 | ARM-03 | Felt vibration in the wrist during the pick cycle, worse than last week.
+2024-05-02 11:20 | -      | Break room coffee machine is out of order again.
+2024-05-03 07:55 | ARM-04 | Loud grinding noise from the shoulder joint when moving to home position.
+2024-05-03 14:10 | ARM-05 | No overheating observed, temps look normal.
+2024-05-04 08:30 | ARM-06 | Wrist shows noticeable backlash when I wiggle it by hand.
+2024-05-04 16:45 | -      | Shift change: production target met, weather was rainy.
+2024-05-05 09:15 | ARM-07 | Small oil leak under the elbow, cleaned it and marked for follow-up.
+2024-05-05 13:00 | ARM-02 | All good, no issues. Replaced a cable tie.
+2024-05-06 07:40 | -      | Ordered more shop towels and two boxes of nitrile gloves.
+2024-05-06 15:25 | ARM-08 | Occasional erratic torque spikes on J3 at high speed, intermittent.
